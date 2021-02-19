@@ -3,6 +3,7 @@ resources:
     repositories:      
     - repository: templates
       type: GitHub
+      endpoint: jigarsoni88
       name: devops-challenge-dotnet.git
       ref: 'main'
 
