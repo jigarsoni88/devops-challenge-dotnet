@@ -1,0 +1,34 @@
+name: 1.0.$(Year:yy)$(DayOfYear)$(rev:.r)
+resources:    
+    repositories:      
+    - repository: templates
+      type: git
+      name: devops-challenge-dotnet.git
+      ref: 'feature-devops-challenge'
+
+trigger:
+  - '*'
+  
+stages: 
+  # Linter tests
+  - template: linter-tests/linter-tests.yml@templates
+    parameters:
+      vmImage: 'ubuntu-latest'
+  
+  # Build stage
+  - template: build-tmpl/build-api-tmpl.yml@templates
+    parameters:
+      container : 'mcr.microsoft.com/dotnet/sdk:5.0'
+      vmImage: 'ubuntu-latest'
+      buildConfigurationType: 'Release'
+      publishAPIProjectPath: '**/*/*.SalesApi.csproj'
+      restoreBuildProjectPath: '**/*.csproj'
+      unitTestsPath: '**/*UnitTests/*.csproj'
+
+ ###--Example to deploy it to various environment---###
+
+  # Release to QA stage
+  #- template: releases/release-api-tmpl.yml@templates
+  #  parameters:
+  #    environmentName: 'QA'
+  #    runFullBootStrap: true

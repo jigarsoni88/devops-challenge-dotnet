@@ -1,0 +1,66 @@
+parameters:
+    vmImage: 'ubuntu-18.04'
+    
+stages:
+- stage: LintTests
+  displayName: Lint Tests
+  variables:
+    isFromMaster: $[eq(variables['Build.SourceBranchName'], 'feature-devops-challenge')]
+    
+  jobs:  
+  - job: RunLintTests
+    displayName: Run Lint tests
+    pool:
+      vmImage: ${{parameters.vmImage}}
+
+    steps:
+    - script: |
+        docker pull github/super-linter:latest
+        docker run -e RUN_LOCAL=true -e OUTPUT_FORMAT=tap -e OUTPUT_DETAILS=detailed -e DISABLE_ERRORS=true -v $(System.DefaultWorkingDirectory):/tmp/lint github/super-linter
+      continueOnError: true
+      displayName: 'Code Scan using GitHub Super-Linter'
+
+    - script: |
+        sudo npm install --global tap-junit
+        tap-junit -i /super-linter.report/super-linter-JSON.tap -n json.xml -o .
+        tap-junit -i /super-linter.report/super-linter-MARKDOWN.tap -n md.xml -o .
+        tap-junit -i /super-linter.report/super-linter-YAML.tap -n yaml.xml -o .
+        tap-junit -i /super-linter.report/super-linter-YAML.tap -n dotnet-format.xml -o .
+      continueOnError: true
+      displayName: 'Convert code scan results to junit format'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish test results: Json'
+      inputs: 
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'json.xml'
+        testRunTitle: 'jsonlint'
+        failTaskOnFailedTests: false
+      condition: always()
+
+    - task: PublishTestResults@2
+      displayName: 'Publish test results: Markdown'
+      inputs: 
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'md.xml'
+        testRunTitle: 'markdownlint'
+        failTaskOnFailedTests: false
+      condition: always()
+
+    - task: PublishTestResults@2
+      displayName: 'Publish code scan test results: YAML'
+      inputs: 
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'yaml.xml'
+        testRunTitle: 'YamlLint'
+        failTaskOnFailedTests: true
+      condition: always()
+
+    - task: PublishTestResults@2
+      displayName: 'Publish code scan test results: dotnet-format'
+      inputs: 
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'dotnet-format.xml'
+        testRunTitle: 'dotnet-format'
+        failTaskOnFailedTests: true
+      condition: always()
