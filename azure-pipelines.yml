@@ -3,8 +3,8 @@ resources:
     repositories:      
     - repository: templates
       type: git
-      name: jigarsoni88/devops-challenge-dotnet.git
-      ref: 'master'
+      name: devops-challenge-dotnet.git
+      ref: 'main'
 
 trigger:
   - '*'

@@ -10,7 +10,7 @@ stages:
 - stage: build
   displayName: Build
   variables:
-    isFromMaster: $[eq(variables['Build.SourceBranchName'], 'master')]
+    isFromMaster: $[eq(variables['Build.SourceBranchName'], 'main')]
     
   jobs:  
   - job: BuildValidateAndPublish
