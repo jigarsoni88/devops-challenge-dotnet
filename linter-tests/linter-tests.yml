@@ -5,7 +5,7 @@ stages:
 - stage: LintTests
   displayName: Lint Tests
   variables:
-    isFromMaster: $[eq(variables['Build.SourceBranchName'], 'feature-devops-challenge')]
+    isFromMaster: $[eq(variables['Build.SourceBranchName'], 'master')]
     
   jobs:  
   - job: RunLintTests
