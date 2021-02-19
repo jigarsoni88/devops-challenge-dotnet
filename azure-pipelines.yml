@@ -2,7 +2,7 @@ name: 1.0.$(Year:yy)$(DayOfYear)$(rev:.r)
 resources:    
     repositories:      
     - repository: templates
-      type: git
+      type: GitHub
       name: devops-challenge-dotnet.git
       ref: 'main'
 
