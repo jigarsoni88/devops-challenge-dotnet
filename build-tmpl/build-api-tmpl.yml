@@ -1,0 +1,72 @@
+parameters:
+    container : 'ubuntu-18.04'
+    vmImage: 'ubuntu-18.04'
+    buildConfigurationType: 'Release'
+    publishAPIProjectPath: '**/*/*.SalesApi.csproj'
+    restoreBuildProjectPath: '**/*.csproj'
+    unitTestsPath: '**/*UnitTests/*.csproj'
+
+stages:
+- stage: build
+  displayName: Build
+  variables:
+    isFromMaster: $[eq(variables['Build.SourceBranchName'], 'master')]
+    
+  jobs:  
+  - job: BuildValidateAndPublish
+    displayName: Build Package, Validate And Publish Artifacts
+    pool:
+      vmImage: ${{parameters.vmImage}}
+    container: ${{parameters.container}}
+    
+    steps:
+    # Restore Nuget Packages    
+    - task: DotNetCoreCli@2
+      displayName: Restore Packages
+      inputs:
+        command: restore
+        projects: '${{parameters.restoreBuildProjectPath}}'
+
+    # Build solution
+    - task: DotNetCoreCli@2
+      displayName: Build API Project
+      inputs:
+        command: build
+        projects: '${{parameters.publishAPIProjectPath}}'
+        arguments: '--configuration ${{parameters.buildConfigurationType}} -p:Version=$(Build.BuildNumber)'
+
+    # Run Unit Tests
+    - task: DotNetCoreCLI@2
+      displayName: Run Unit Tests and Collect Coverage
+      inputs:
+        command: test
+        projects: '${{parameters.unitTestsPath}}'
+        configuration: ${{parameters.buildConfigurationType}}                    
+        arguments: '--collect "Code coverage"'            
+
+    # Publish Test Coverage
+    - task: PublishTestResults@2
+      displayName: Publish Test Coverage
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '$(Agent.TempDirectory)/*.trx' 
+        failTaskOnFailedTests: true
+        buildConfiguration: '${{parameters.buildConfigurationType}}'
+        buildPlatform: '$(BuildPlatform)'         
+     
+    # Publish API Project
+    - task: DotNetCoreCLI@2
+      displayName: Publish API Project
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: '${{parameters.publishAPIProjectPath}}'
+        arguments: '--configuration ${{parameters.buildConfigurationType}} --output $(Build.ArtifactStagingDirectory)/api'
+        zipAfterPublish: true        
+
+    # Publish Artifacts
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'      
+      inputs:
+        pathToPublish: '$(build.artifactstagingdirectory)/api'    
+        ArtifactName: 'api'
